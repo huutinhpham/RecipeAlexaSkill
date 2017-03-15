@@ -1,0 +1,28 @@
+{
+  "intents": [
+    {
+      "intent": "RecipeIntent",
+      "slots": [
+        {
+          "name": "Recipe",
+          "type": "LIST_OF_RECIPES"
+        }
+      ]
+    },
+    {
+      "intent": "IngredientIntent"
+    },
+    {
+      "intent": "TransitionIntent",
+      "slots": [
+        {
+          "name": "Transition",
+          "type": "TRANSITION_WORDS"
+        }
+      ]
+    },
+    {
+      "intent": "HelpIntent"
+    }
+  ]
+}

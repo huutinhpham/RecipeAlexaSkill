@@ -1,0 +1,9 @@
+Transition
+exit
+quit
+off
+main menu
+start
+read recipe
+next
+last
