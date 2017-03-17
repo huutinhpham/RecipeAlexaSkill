@@ -1,7 +1,7 @@
 Transition
-exit
-quit
-off
+finished
+done
+back
 main menu
 start
 read recipe

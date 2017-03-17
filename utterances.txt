@@ -1,11 +1,19 @@
-RecipeIntent {Recipe}
-RecipeIntent find {Recipe}
-RecipeIntent I want to make {Recipe}
-RecipeIntent I'd like to make {Recipe}
-RecipeIntent how do I make {Recipe}
-RecipeIntent how do I cook {Recipe}
+PreparationIntent {Recipe}
+PreparationIntent find {Recipe}
+PreparationIntent I want to make {Recipe}
+PreparationIntent I'd like to make {Recipe}
+PreparationIntent how do I make {Recipe}
+PreparationIntent how do I cook {Recipe}
 
 IngredientIntent ingredients
+IngredientIntent ingredient
+IngredientIntent go to ingredient list
+IngredientIntent go to ingredients
+
+RecipeIntent recipe
+RecipeIntent go to recipe
+RecipeIntent go to recipe steps
+RecipeIntent recipe steps
 
 TransitionIntent {Transition}
 TransitionIntent go to {Transition}
@@ -14,5 +22,8 @@ TransitionIntent {Transition} step
 TransitionIntent {Transition} recipe
 TransitionIntent I want to go to {Transition} ingredient
 TransitionIntent I want to go to {Transition} step
+TransitionIntent {Transition} out
+TransitionIntent I am {Transition}
+
 
 HelpIntent what can I say

@@ -118,18 +118,20 @@ function onIntent(intentRequest, session, callback) {
         intentName = intentRequest.intent.name;
         sessionAtrributes = session.attributes;
         
-    if (intentName === "RecipeIntent") {
+    if (intentName === "PreparationIntent") {
         var recipeSlot = intent.slots.Recipe;
         var recipeName;
         if (recipeSlot && recipeSlot.value) {
             recipeName = recipeSlot.value.toLowerCase();
-            getDB(recipeName);
+            //getDB(recipeName);
             sessionAttributes.recipeName = recipeName;
             session.attributes = sessionAttributes;
-            makeFood(intent, session, callback);
+            preparation(intent, session, callback);
         } else {
             this.emit("Sorry, I don't know that recipe");
         }
+    } else if (intentName === "RecipeIntent") {
+      makeFood(intent, session, callback);
     } else if (intentName === "IngredientIntent") {
       listIngredients(intent, session, callback);
     } else if (intentName === "TransitionIntent") {
@@ -140,6 +142,16 @@ function onIntent(intentRequest, session, callback) {
         repeat(intent, session, callback);
     }
     
+}
+
+function preparation(intent, session, callback) {
+    sessionAttributes = session.attributes;
+    
+    sessionAttributes.recipe = recipe;
+    sessionAttributes.mode = "preparation mode";  
+
+    callback(sessionAttributes,
+        buildSpeechletResponse("If you want the recipe steps for " + sessionAttributes.recipeName + ", say recipe. If you want the ingredient list for " + sessionAttributes.recipeName + ", say ingredients.", false));
 }
 
 function makeFood(intent, session, callback) {
@@ -166,7 +178,6 @@ function listIngredients(intent, session, callback) {
     sessionAttributes.ingredients = ingredients;
     sessionAttributes.mode = "ingredient mode"
     
-    
     sessionAttributes.step = 0;
     
     callback(sessionAttributes,
@@ -181,8 +192,6 @@ function transition(intent, session, callback) {
     var outputText = "";
     
     
-    
-    
     //next ingredient or recipe step
     if (transition === "next" || transition === "start" || transition === "read recipe") {
         if (sessionAttributes.mode === "main menu") {
@@ -192,25 +201,25 @@ function transition(intent, session, callback) {
             if (transition === "next") {
                 step = sessionAttributes.step + 1;
             } else if (transition === "start") {
-                step = 1;
+                step = 0;
             } else if (transition === "read recipe") {
-                step = 1;
+                step = 0;
                 sessionAttributes.mode = "recipe mode";
             }
         
             sessionAttributes.step = step;
         
             if (sessionAttributes.mode === "ingredient mode") {
-                if (step > sessionAttributes.ingredients.length) {
+                if (step >= sessionAttributes.ingredients.length) {
                     makeFood(intent, session, callback);
                 } else {
-                    outputText = sessionAttributes.ingredients[step - 1];
+                    outputText = sessionAttributes.ingredients[step];
                 }
             } else if (sessionAttributes.mode === "recipe mode") {
-                if (step > sessionAttributes.recipe.length) {
+                if (step >= sessionAttributes.recipe.length) {
                     outputText = "There are no more steps"
                 } else {
-                    outputText = sessionAttributes.recipe[step - 1];
+                    outputText = sessionAttributes.recipe[step];
                 }
             }
         }
@@ -228,14 +237,14 @@ function transition(intent, session, callback) {
                     outputText = "There are no previous ingredient";
                     sessionAttributes.step = 0;
                 } else {
-                    outputText = sessionAttributes.ingredients[step - 1];
+                    outputText = sessionAttributes.ingredients[step];
                 }
             } else if (sessionAttributes.mode === "recipe mode") {
                 if (step < 0) {
                     outputText = "There are no previous step";
                     sessionAttributes.step = 0;
                 } else {
-                    outputText = sessionAttributes.recipe[step - 1];
+                    outputText = sessionAttributes.recipe[step];
                 }
             }
         }
@@ -243,8 +252,8 @@ function transition(intent, session, callback) {
     
     //exit transition
     
-    if (transition === "main menu" || transition === "quit" || transition === "exit") {
-        if (sessionAttributes.mode === "recipe mode" || sessionAttributes.mode === "ingredients mode" || transition === "main menu") {
+    if (transition === "main menu" || transition === "back" || transition === "finished" || transition === "done") {
+        if (sessionAttributes.mode === "recipe mode" || sessionAttributes.mode === "ingredients mode" || sessionAttributes.mode === "preparation mode") {
             onLaunch(intent, session, callback);
         } else {
             handleFinishSessionRequest(intent, session, callback);
@@ -266,15 +275,23 @@ function help(intent, session, callback) {
         outputText +=  "next step. ";
         outputText +=  "last step. ";
         outputText +=  "main menu. ";
-        outputText +=  "exit. ";
-        outputText +=  "and quit.";
+        outputText +=  "done. ";
+        outputText +=  "finished. ";
+        outputText +=  "back out. ";
     } else if (sessionAttributes.mode === "ingredient mode") {
+        outputText +=  "start. ";
         outputText +=  "start again. ";
         outputText +=  "next ingredient. ";
         outputText +=  "last ingredient. ";
         outputText +=  "main menu. ";
-        outputText +=  "exit. ";
-        outputText +=  "and quit.";       
+        outputText +=  "done. ";
+        outputText +=  "finished. ";
+        outputText +=  "back out. ";
+    } else if (sessionAttributes.mode === "preparation mode") {
+        outputText +=  "recipe. ";
+        outputText +=  "ingredients. ";
+        outputText +=  "go to recipe steps. ";
+        outputText +=  "go to ingredient list. ";
     } else if (sessionAttributes.mode === "main menu") {
         outputText += "how do I make, following with a type of food you wish to make."
     }
@@ -283,6 +300,11 @@ function help(intent, session, callback) {
         buildSpeechletResponse(outputText, false));
 }
 
+function repeat(intent, session, callback) {
+    sesstionAttribute = session.attribute;
+    callback(session.attributes,
+        buildSpeechletResponse("I do not understand that statement. If you need help say, what can I say, for a list of possible statements.", false));
+}
 
 function handleFinishSessionRequest(sessionEndedRequest, session, callbac) {
     callback(session.attributes,
