@@ -1,3 +1,17 @@
+const doc = require('dynamodb-doc');
+
+const dynamo = new doc.DynamoDB();
+
+var sessionAttributes = {
+    "mode" : "main menu",
+    "recipeName": "",
+    "recipe": [],
+    "ingredients": [],
+    "step" : 0,
+    "DB": ""
+};
+
+
 exports.handler = function (event, context) {
     
     try {
@@ -33,6 +47,35 @@ exports.handler = function (event, context) {
     }
 };
 
+function getDB(recipeName) {
+    var params = {
+        ExpressionAttributeValues: {
+           ":v1": {
+             S: "Bacon and Eggs"
+            }
+          }, 
+        KeyConditionExpression: "RecipeName = :v1", 
+        ProjectionExpression: "Ingredients", 
+        TableName: "Recipes"
+    };
+    
+    dynamo.query(params, function(err,data){
+        if (err) { 
+            console.log(err, err.stack);
+        } else {
+            console.log(data);
+        }
+    });
+    
+    dynamo.scan({TableName: "Recipes"}, function(err,data){
+        if (err) { 
+            console.log(err, err.stack);
+        } else {
+            console.log(JSON.stringify(data));
+        }
+    });
+    
+}
 
 /**
  * Called when the session starts.
@@ -48,14 +91,6 @@ function onSessionStarted(sessionStartedRequest, session, callback) {
 function onLaunch(launchRequest, session, callback) {
     console.log("onLaunch requestId=" + launchRequest.requestId
         + ", sessionId=" + session.sessionId);
-        
-    sessionAttributes = {
-        "mode" : "main menu",
-        "recipeName": "",
-        "recipe": [],
-        "ingredients": [],
-        "step" : 0
-    };
         
     callback(sessionAttributes,
         buildSpeechletResponse("recipe assistant, what recipe would you like to make?", false));
@@ -84,8 +119,17 @@ function onIntent(intentRequest, session, callback) {
         sessionAtrributes = session.attributes;
         
     if (intentName === "RecipeIntent") {
-        sessionAttributes.recipeName = intent.slots.Recipe.value;
-        listIngredients(intent, session, callback);
+        var recipeSlot = intent.slots.Recipe;
+        var recipeName;
+        if (recipeSlot && recipeSlot.value) {
+            recipeName = recipeSlot.value.toLowerCase();
+            getDB(recipeName);
+            sessionAttributes.recipeName = recipeName;
+            session.attributes = sessionAttributes;
+            makeFood(intent, session, callback);
+        } else {
+            this.emit("Sorry, I don't know that recipe");
+        }
     } else if (intentName === "IngredientIntent") {
       listIngredients(intent, session, callback);
     } else if (intentName === "TransitionIntent") {
@@ -126,7 +170,7 @@ function listIngredients(intent, session, callback) {
     sessionAttributes.step = 0;
     
     callback(sessionAttributes,
-             buildSpeechletResponse("When you are ready for the list of ingredients " + sessionAttributes.recipeName + ". Say start.", false));
+             buildSpeechletResponse("When you are ready for the list of ingredients for " + sessionAttributes.recipeName + ". Say start.", false));
 }
 
 function transition(intent, session, callback) {
