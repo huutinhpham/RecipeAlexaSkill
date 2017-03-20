@@ -91,20 +91,13 @@ var sessionAttributes = {
 function getDB(recipeName, callback) {
         
     var params = {
-    //   Key: {
-    //   "RecipeName": {
-    //      S: "Italian Lasagna"
-    //     }
-    //   }, 
       TableName: "RecipeList"
     };
         
     dynamo.scan(params, function(err,data){
-        console.log("doing scan");
         if (err) { 
             console.log(err, err.stack);
         } else {
-            console.log(data);
             for (var i = 0; i<data["Items"].length; i++) {
                 var curItem = data["Items"][i];
                 var curName = curItem["RecipeName"];
@@ -131,27 +124,13 @@ function onLaunch(launchRequest, session, callback) {
     console.log("onLaunch requestId=" + launchRequest.requestId
         + ", sessionId=" + session.sessionId);
         
-    getDB("pizza", function (data) {
-        sessionAttributes.DB = data;
-    });
-        
     callback(sessionAttributes,
         buildSpeechletResponse("recipe assistant, what recipe would you like to make?", false));
 }
 
 //hard coded variable used for testing, replace it with real db items some how
-var recipe = ["1. Beat eggs, water, salt and pepper in small bowl until blended",
-              "2. Heat butter in 7 to 10-inch nonstick omelet pan or skillet over medium-high heat until hot. TILT pan to coat bottom.",
-              "3. Pour in egg mixture. Mixture should set immediately at edges.",
-              "4. Gently push cooked portions from edges toward the center with inverted turner so that uncooked eggs can reach the hot pan surface.",
-              "5. When top surface of eggs is thickened and no visible liquid egg remains, place filling on one side of the omelet.",
-              "6. fold omelet in half with turner. With a quick flip of the wrist, turn pan and INVERT or SLIDE omelet onto plate. Serve immediately."];
-var ingredients = ["2 Eggs",
-                   "2 table spoon of water",
-                   "1/8 tea spoon of salt",
-                   "a dash of pepper",
-                   "1 tea spoon of butter",
-                   "1/2 to 1/3 cup of filling such as cheddar cheese, mushrooms, baby spinach, etc."];
+var recipe = [];
+var ingredients = [];
 
 function onIntent(intentRequest, session, callback) {
     console.log("onIntent requestId=" + intentRequest.requestId
@@ -169,18 +148,18 @@ function onIntent(intentRequest, session, callback) {
             recipeName = recipeSlot.value.toLowerCase();
             getDB(recipeName, function (data) {
                 recipeList = data;
+                console.log(recipeList);
+                if (recipeList.length === 0) {
+                    callback(sessionAttributes,
+                        buildSpeechletResponse("Sorry, I don't know that recipe", false));
+                } else {
+                    sessionAttributes.recipe = recipeList[0];
+                    sessionAttributes.ingredients = recipeList[1];
+                    sessionAttributes.recipeName = recipeName;
+                    session.attributes = sessionAttributes;
+                    makeFood(intent, session, callback);
+                }
             });
-            console.log(recipeList);
-            if (recipeList.length === 0) {
-                callback(sessionAttributes,
-                    buildSpeechletResponse("Sorry, I don't know that recipe", false));
-            } else {
-                sessionAttributes.recipe = recipeList[0];
-                sessionAttributes.ingredients = recipeList[1];
-                sessionAttributes.recipeName = recipeName;
-                session.attributes = sessionAttributes;
-                makeFood(intent, session, callback);
-            }
         } else {
             callback(sessionAttributes,
                     buildSpeechletResponse("Sorry, I don't know that recipe", false));
@@ -203,7 +182,6 @@ function makeFood(intent, session, callback) {
     
     sessionAttributes = session.attributes;
     
-    sessionAttributes.recipe = recipe;
     sessionAttributes.mode = "recipe mode";
     sessionAttributes.step = 0;
     
