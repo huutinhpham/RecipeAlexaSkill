@@ -4,7 +4,7 @@ console.log('Loading function');
 
 const doc = require('dynamodb-doc');
 
-var dynamo = new doc.DynamoDB();
+const dynamo = new doc.DynamoDB();
 
 /**
  * Demonstrates a simple HTTP endpoint using API Gateway. You have full
@@ -79,15 +79,7 @@ exports.handler = (event, context, callback) => {
     }
 };
 
-var sessionAttributes = {
-    "mode" : "main menu",
-    "recipeName": "",
-    "recipe": [],
-    "ingredients": [],
-    "step" : 0,
-    "DB": []
-};
-
+// Used to Access the database
 function getDB(recipeName, callback) {
         
     var params = {
@@ -109,6 +101,16 @@ function getDB(recipeName, callback) {
     });
 }
 
+var sessionAttributes = {
+    "mode" : "main menu",
+    "recipeName": "",
+    "recipe": [],
+    "ingredients": [],
+    "step" : 0,
+    "DB": []
+};
+
+
 /**
  * Called when the session starts.
  */
@@ -128,7 +130,19 @@ function onLaunch(launchRequest, session, callback) {
         buildSpeechletResponse("recipe assistant, what recipe would you like to make?", false));
 }
 
-
+//hard coded variable used for testing, replace it with real db items some how
+// var recipe = ["1. Beat eggs, water, salt and pepper in small bowl until blended",
+//               "2. Heat butter in 7 to 10-inch nonstick omelet pan or skillet over medium-high heat until hot. TILT pan to coat bottom.",
+//               "3. Pour in egg mixture. Mixture should set immediately at edges.",
+//               "4. Gently push cooked portions from edges toward the center with inverted turner so that uncooked eggs can reach the hot pan surface.",
+//               "5. When top surface of eggs is thickened and no visible liquid egg remains, place filling on one side of the omelet.",
+//               "6. fold omelet in half with turner. With a quick flip of the wrist, turn pan and INVERT or SLIDE omelet onto plate. Serve immediately."];
+// var ingredients = ["2 Eggs",
+//                   "2 table spoon of water",
+//                   "1/8 tea spoon of salt",
+//                   "a dash of pepper",
+//                   "1 tea spoon of butter",
+//                   "1/2 to 1/3 cup of filling such as cheddar cheese, mushrooms, baby spinach, etc."];
 
 function onIntent(intentRequest, session, callback) {
     console.log("onIntent requestId=" + intentRequest.requestId
@@ -155,7 +169,6 @@ function onIntent(intentRequest, session, callback) {
                     sessionAttributes.ingredients = recipeList[1];
                     sessionAttributes.recipeName = recipeName;
                     session.attributes = sessionAttributes;
-                    console.log(session.attribute.recipe);
                     preparation(intent, session, callback);
                 }
             });
@@ -179,6 +192,7 @@ function onIntent(intentRequest, session, callback) {
 
 function preparation(intent, session, callback) {
     sessionAttributes = session.attributes;
+    
     sessionAttributes.mode = "preparation mode";
     
     callback(sessionAttributes,
@@ -186,9 +200,8 @@ function preparation(intent, session, callback) {
 }
 
 function makeFood(intent, session, callback) {
-       
+    
     sessionAttributes = session.attributes;
-
     sessionAttributes.mode = "recipe mode";
     sessionAttributes.step = 0;
     
@@ -330,7 +343,6 @@ function repeat(intent, session, callback) {
     callback(session.attributes,
         buildSpeechletResponse("I do not understand that statement. If you need help say, what can I say, for a list of possible statements.", false));
 }
-
 
 function handleFinishSessionRequest(sessionEndedRequest, session, callback) {
     callback(session.attributes,
