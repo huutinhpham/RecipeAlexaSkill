@@ -4,7 +4,7 @@ console.log('Loading function');
 
 const doc = require('dynamodb-doc');
 
-const dynamo = new doc.DynamoDB();
+var dynamo = new doc.DynamoDB();
 
 /**
  * Demonstrates a simple HTTP endpoint using API Gateway. You have full
@@ -22,25 +22,30 @@ exports.handler = (event, context, callback) => {
         statusCode: err ? '400' : '200',
         body: err ? err.message : JSON.stringify(res),
         headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/json','Access-Control-Allow-Headers': 'x-requested-with',
+            "Access-Control-Allow-Origin" : "*", "Access-Control-Allow-Credentials" : true,
         },
     });
 
-    switch (event.httpMethod) {
-        case 'DELETE':
-            dynamo.deleteItem(JSON.parse(event.body), done);
-            break;
-        case 'GET':
-            dynamo.scan({ TableName: event.queryStringParameters.TableName }, done);
-            break;
-        case 'POST':
-            dynamo.putItem(JSON.parse(event.body), done);
-            break;
-        case 'PUT':
-            dynamo.updateItem(JSON.parse(event.body), done);
-            break;
-        default:
-            try {
+    if (event.httpMethod) {
+        switch (event.httpMethod) {
+            case 'DELETE':
+                dynamo.deleteItem(JSON.parse(event.body), done);
+                break;
+            case 'GET':
+                dynamo.scan({ TableName: event.queryStringParameters.TableName }, done);
+                break;
+            case 'POST':
+                dynamo.putItem(JSON.parse(event.body), done);
+                break;
+            case 'PUT':
+                dynamo.updateItem(JSON.parse(event.body), done);
+                break;
+            default:
+                done(new Error(`Unsupported method "${event.httpMethod}"`));
+        }
+    } else {
+        try {
                 console.log("event.session.application.applicationId=" + event.session.application.applicationId);
         
                 // if (event.session.application.applicationId !== "amzn1.ask.skill.50c44d6a-970c-48f4-923f-7bb32f6a0196") {
@@ -72,7 +77,6 @@ exports.handler = (event, context, callback) => {
                 context.fail("Exception: " + e);
             }
     }
-    
 };
 
 var sessionAttributes = {
@@ -81,31 +85,36 @@ var sessionAttributes = {
     "recipe": [],
     "ingredients": [],
     "step" : 0,
-    "DB": ""
+    "DB": []
 };
 
-    function getDB(recipeName) {
+function getDB(recipeName, callback) {
         
-
-        var params = {
-            TableName: "RecipeList"
-         };
+    var params = {
+    //   Key: {
+    //   "RecipeName": {
+    //      S: "Italian Lasagna"
+    //     }
+    //   }, 
+      TableName: "RecipeList"
+    };
         
-        dynamo.scan(params, function(err,data){
-            if (err) { 
-                console.log(err, err.stack);
-            } else {
-                console.log(data);
-                for (var i = 0; i<data["Items"].length; i++) {
-                    var curItem = data["Items"][i];
-                    var curName = curItem["RecipeName"];
-                    if (curName == recipeName) {
-                        console.log([curItem["PrepDirections"].split("+"), curItem["IngredientsList"].split("+")]);
-                    }
+    dynamo.scan(params, function(err,data){
+        console.log("doing scan");
+        if (err) { 
+            console.log(err, err.stack);
+        } else {
+            console.log(data);
+            for (var i = 0; i<data["Items"].length; i++) {
+                var curItem = data["Items"][i];
+                var curName = curItem["RecipeName"];
+                if (curName == recipeName) {
+                    callback([curItem["PrepDirections"].split("+"), curItem["IngredientsList"].split("+")]);
                 }
             }
-        });
-    }
+        }
+    });
+}
 
 /**
  * Called when the session starts.
@@ -121,6 +130,10 @@ function onSessionStarted(sessionStartedRequest, session, callback) {
 function onLaunch(launchRequest, session, callback) {
     console.log("onLaunch requestId=" + launchRequest.requestId
         + ", sessionId=" + session.sessionId);
+        
+    getDB("pizza", function (data) {
+        sessionAttributes.DB = data;
+    });
         
     callback(sessionAttributes,
         buildSpeechletResponse("recipe assistant, what recipe would you like to make?", false));
@@ -154,17 +167,20 @@ function onIntent(intentRequest, session, callback) {
         var recipeList = [];
         if (recipeSlot && recipeSlot.value) {
             recipeName = recipeSlot.value.toLowerCase();
-            getDB(recipeName);
-            // if (recipeList.length === 0) {
-            //     callback(sessionAttributes,
-            //         buildSpeechletResponse("Sorry, I don't know that recipe", false));
-            // } else {
-            //     sessionAttributes.recipe = recipeList[0];
-            //     sessionAttributes.ingredients = recipeList[1];
+            getDB(recipeName, function (data) {
+                recipeList = data;
+            });
+            console.log(recipeList);
+            if (recipeList.length === 0) {
+                callback(sessionAttributes,
+                    buildSpeechletResponse("Sorry, I don't know that recipe", false));
+            } else {
+                sessionAttributes.recipe = recipeList[0];
+                sessionAttributes.ingredients = recipeList[1];
                 sessionAttributes.recipeName = recipeName;
                 session.attributes = sessionAttributes;
                 makeFood(intent, session, callback);
-            // }
+            }
         } else {
             callback(sessionAttributes,
                     buildSpeechletResponse("Sorry, I don't know that recipe", false));
