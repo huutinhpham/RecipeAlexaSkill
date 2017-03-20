@@ -100,9 +100,9 @@ function getDB(recipeName, callback) {
         } else {
             for (var i = 0; i<data["Items"].length; i++) {
                 var curItem = data["Items"][i];
-                var curName = curItem["RecipeName"];
+                var curName = curItem["RecipeName"].toLowerCase();
                 if (curName == recipeName) {
-                    callback([curItem["PrepDirections"].split("+"), curItem["IngredientsList"].split("+")]);
+                    callback([curItem["PrepDirections"].split("\n"), curItem["IngredientsList"].split("\n")]);
                 }
             }
         }
