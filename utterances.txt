@@ -16,6 +16,7 @@ RecipeIntent go to recipe steps
 RecipeIntent recipe steps
 
 TransitionIntent {Transition}
+TransitionIntent {Transition} again
 TransitionIntent go to {Transition}
 TransitionIntent {Transition} ingredient
 TransitionIntent {Transition} step
