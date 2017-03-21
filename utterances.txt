@@ -4,11 +4,18 @@ PreparationIntent I want to make {Recipe}
 PreparationIntent I'd like to make {Recipe}
 PreparationIntent how do I make {Recipe}
 PreparationIntent how do I cook {Recipe}
+PreparationIntent I am making {Recipe}
+PreparationIntent {Recipe} sounds good
+PreparationIntent cooking {Recipe}
+PreparationIntent making {Recipe}
+
 
 IngredientIntent ingredients
 IngredientIntent ingredient
 IngredientIntent go to ingredient list
+IngredientIntent go to ingredients list
 IngredientIntent go to ingredients
+IngredientIntent go to ingredient
 
 RecipeIntent recipe
 RecipeIntent go to recipe
@@ -19,12 +26,12 @@ TransitionIntent {Transition}
 TransitionIntent {Transition} again
 TransitionIntent go to {Transition}
 TransitionIntent {Transition} ingredient
+TransitionIntent {Transition} ingredients
 TransitionIntent {Transition} step
 TransitionIntent {Transition} recipe
 TransitionIntent I want to go to {Transition} ingredient
 TransitionIntent I want to go to {Transition} step
 TransitionIntent {Transition} out
 TransitionIntent I am {Transition}
-
 
 HelpIntent what can I say
